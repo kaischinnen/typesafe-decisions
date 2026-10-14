@@ -30,9 +30,26 @@ def llm(
 ) -> str:
     """Generate text through Cloudflare AI Gateway.
 
-    ``using`` is the only context sent alongside ``instruction``. Cloudflare
-    configuration can be passed directly or read from ``CF_ACCOUNT_ID``,
-    ``CF_API_TOKEN``, ``GATEWAY_ID``, and ``TEXT_MODEL``.
+    Args:
+        instruction: The writing instruction sent to the text model.
+        using: Optional explicit context for the instruction. No application
+            state is added implicitly.
+        account_id: Cloudflare account ID. Defaults to ``CF_ACCOUNT_ID``.
+        api_token: Cloudflare API token. Defaults to ``CF_API_TOKEN``.
+        gateway_id: AI Gateway ID. Defaults to ``GATEWAY_ID`` and then
+            ``"default"``.
+        model: Workers AI model identifier. Defaults to ``TEXT_MODEL`` and then
+            the package's default text model.
+        max_tokens: Maximum number of generated tokens requested from the model.
+        temperature: Sampling temperature passed to the model.
+        timeout: HTTP request timeout.
+
+    Returns:
+        Generated text with leading and trailing whitespace removed.
+
+    Raises:
+        RuntimeError: If required configuration is missing, Cloudflare rejects
+            the request, or the response does not contain valid generated text.
     """
     resolved_account_id = _cloudflare_setting(account_id, "CF_ACCOUNT_ID")
     resolved_api_token = _cloudflare_setting(api_token, "CF_API_TOKEN")

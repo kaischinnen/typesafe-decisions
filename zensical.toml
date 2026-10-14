@@ -1,0 +1,80 @@
+[project]
+site_name = "typesafe-decisions"
+site_url = "https://kaischinnen.github.io/typesafe-decisions/"
+site_description = "Typed building blocks for semantic decisions in Python."
+site_author = "Kai Schinnen"
+copyright = "Copyright &copy; 2026 Kai Schinnen"
+docs_dir = "docs"
+site_dir = "site"
+repo_url = "https://github.com/kaischinnen/typesafe-decisions"
+repo_name = "kaischinnen/typesafe-decisions"
+edit_uri = "edit/main/docs/"
+nav = [
+    { Home = "index.md" },
+    { "Getting started" = "getting-started.md" },
+    { Concepts = "concepts.md" },
+    { Guides = [
+        { "Measure a property" = "guides/feels.md" },
+        { "Choose a match" = "guides/match.md" },
+        { "Generate text" = "guides/cloudflare-llm.md" },
+    ] },
+    { "API reference" = "reference.md" },
+    { Development = "development.md" },
+]
+
+[project.theme]
+language = "en"
+features = [
+    "content.code.copy",
+    "navigation.footer",
+    "navigation.indexes",
+    "navigation.instant",
+    "navigation.sections",
+    "navigation.top",
+    "search.highlight",
+    "search.suggest",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "indigo"
+accent = "cyan"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "indigo"
+accent = "cyan"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[project.markdown_extensions]
+admonition = {}
+attr_list = {}
+pymdownx.details = {}
+pymdownx.highlight.anchor_linenums = true
+pymdownx.highlight.line_spans = "__span"
+pymdownx.highlight.pygments_lang_class = true
+pymdownx.inlinehilite = {}
+pymdownx.superfences = {}
+toc.permalink = true
+
+[project.plugins.mkdocstrings]
+default_handler = "python"
+
+[project.plugins.mkdocstrings.handlers.python]
+paths = ["src"]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+annotations_path = "brief"
+docstring_section_style = "list"
+docstring_style = "google"
+merge_init_into_class = true
+separate_signature = true
+show_root_heading = true
+show_source = false
+show_signature_annotations = true
+signature_crossrefs = true

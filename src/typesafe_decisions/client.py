@@ -20,7 +20,28 @@ ResponseT = TypeVar("ResponseT", bound=BaseModel)
 
 
 class DecisionClient:
-    """Convenience client for semantic decisions with TypeSafe System One."""
+    """Make semantic decisions with TypeSafe System One.
+
+    Args:
+        api_key_env: Name of the environment variable containing the TypeSafe
+            API key. Defaults to ``TYPESAFE_API_KEY``. This is a variable name,
+            not the API key itself.
+        model: Default TypeSafe model passed to the underlying client.
+        retry: Default retry policy passed to the underlying client.
+        timeout: Default request timeout passed to the underlying client.
+        headers: Default HTTP headers passed to the underlying client.
+        transport: Optional HTTP transport used by the underlying client.
+        http_client: Optional preconfigured HTTP client.
+        base_url: Optional TypeSafe API base URL.
+
+    Raises:
+        RuntimeError: If the selected API-key environment variable is missing
+            or empty.
+
+    Notes:
+        Use the client as a context manager so its HTTP resources are closed
+        after use.
+    """
 
     def __init__(
         self,
@@ -104,6 +125,25 @@ class DecisionClient:
         extra_headers: Mapping[str, str] | None = None,
         extra_body: Mapping[str, JSONValue | None] | None = None,
     ) -> float:
+        """Measure how strongly a state satisfies a semantic question.
+
+        Args:
+            state: Text or JSON-compatible data to evaluate.
+            question: The property to measure, for example whether the state
+                needs an urgent reply.
+            model: Model override for this request.
+            retry: Retry-policy override for this request.
+            timeout: Timeout override for this request.
+            extra_headers: Additional HTTP headers for this request.
+            extra_body: Additional JSON fields for this request.
+
+        Returns:
+            The score returned for the question by TypeSafe System One.
+
+        Raises:
+            TypeSafeAPIError: If the TypeSafe request fails. The exception is
+                re-raised unchanged after its status and request ID are printed.
+        """
         try:
             result = self.client.system_one(
                 state,
@@ -167,8 +207,26 @@ class DecisionClient:
     ) -> str | ResponseT:
         """Select the criterion that best matches ``state``.
 
-        The selected criterion name is returned by default. When ``response_model``
-        is supplied, the custom parsed response is returned unchanged.
+        Args:
+            state: Text or JSON-compatible data to classify.
+            question: The decision instruction sent to TypeSafe.
+            criteria: Mapping of returned labels to their semantic definitions.
+                A definition may be ``None`` when the label is self-explanatory.
+            model: Model override for this request.
+            retry: Retry-policy override for this request.
+            timeout: Timeout override for this request.
+            extra_headers: Additional HTTP headers for this request.
+            extra_body: Additional JSON fields for this request.
+            response_model: Optional Pydantic model describing the System One
+                response body.
+
+        Returns:
+            The selected criterion label. If ``response_model`` is provided,
+            the parsed model instance returned by the SDK is returned unchanged.
+
+        Raises:
+            TypeSafeAPIError: If the TypeSafe request fails. The exception is
+                re-raised unchanged after its status and request ID are printed.
         """
         questions = {
             "match": Choice(instructions=question, criteria=criteria),

@@ -29,7 +29,14 @@ dependencies = [
     "typesafe-sdk>=0.7.1,<0.8",
 ]
 
+[project.optional-dependencies]
+docs = [
+    "mkdocstrings[python]>=1.0.6,<2",
+    "zensical>=0.0.60,<0.1",
+]
+
 [project.urls]
+Documentation = "https://kaischinnen.github.io/typesafe-decisions/"
 Repository = "https://github.com/kaischinnen/typesafe-decisions"
 Issues = "https://github.com/kaischinnen/typesafe-decisions/issues"
 
