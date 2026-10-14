@@ -2,3 +2,6 @@
 *workspace
 .venv
 .pytest_cache
+.vscode
+dist
+*egg-info
