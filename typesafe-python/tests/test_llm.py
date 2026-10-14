@@ -5,77 +5,47 @@ from unittest.mock import Mock, patch
 
 import httpx2
 
-import demo
 from main import JevLib
 
 
 class TestJevLibLlm(unittest.TestCase):
-    @patch("demo.run_feel")
-    @patch("demo.run_feel_llm")
-    @patch("demo.JevLib")
-    def test_demo_uses_ts_api_key_for_typesafe_client(
-        self,
-        jevlib: Mock,
-        run_feel_llm: Mock,
-        run_feel: Mock,
-    ):
-        typesafe_instance = jevlib.return_value.__enter__.return_value
-
-        with patch("builtins.print"):
-            demo.main()
-
-        run_feel_llm.assert_called_once_with()
-        jevlib.assert_called_once_with(api_key="TS_API_KEY")
-        run_feel.assert_called_once_with(typesafe_instance)
-
-    @patch.dict(os.environ, {"CF_GATEWAY_API_KEY": "gateway-token"}, clear=True)
-    @patch("demo.JevLib.llm")
-    def test_demo_passes_cloudflare_key_only_to_llm(self, llm: Mock):
-        llm.return_value = "A short reply."
-
-        with patch("builtins.print"):
-            demo.run_feel_llm()
-
-        llm.assert_called_once_with(
-            "Draft a calm, helpful reply in one short sentence.",
-            using="Please resolve my email immediately!",
-            api_token="gateway-token",
-        )
-
     @patch.dict(
         os.environ,
         {
-            "CF_ACCOUNT_ID": "account/id",
-            "CF_API_TOKEN": "cloudflare-token",
+            "CF_ACCOUNT_ID": "test/account",
+            "CF_API_TOKEN": "test-token",
         },
         clear=True,
     )
     @patch("main.httpx2.post")
     def test_sends_only_instruction_and_explicit_context(self, post: Mock):
+        instruction = "Transform the supplied test data."
+        context = {"value": "fixture", "enabled": True}
+        generated_text = "Generated from the fixture."
         response = Mock(spec=httpx2.Response)
         response.json.return_value = {
             "success": True,
-            "result": {"response": "  A short reply.  "},
+            "result": {"response": f"  {generated_text}  "},
         }
         post.return_value = response
 
         result = JevLib.__new__(JevLib).llm(
-            "Write a short reply.",
-            using={"message": "Hello", "private": False},
+            instruction,
+            using=context,
         )
 
-        self.assertEqual(result, "A short reply.")
+        self.assertEqual(result, generated_text)
         response.raise_for_status.assert_called_once_with()
         post.assert_called_once()
         call = post.call_args
         self.assertEqual(
             call.args[0],
-            "https://api.cloudflare.com/client/v4/accounts/account%2Fid/ai/run",
+            "https://api.cloudflare.com/client/v4/accounts/test%2Faccount/ai/run",
         )
         self.assertEqual(
             call.kwargs["headers"],
             {
-                "Authorization": "Bearer cloudflare-token",
+                "Authorization": "Bearer test-token",
                 "Content-Type": "application/json",
                 "cf-aig-gateway-id": "default",
             },
@@ -83,8 +53,8 @@ class TestJevLibLlm(unittest.TestCase):
         self.assertEqual(
             json.loads(call.kwargs["json"]["input"]["messages"][1]["content"]),
             {
-                "instruction": "Write a short reply.",
-                "context": {"message": "Hello", "private": False},
+                "instruction": instruction,
+                "context": context,
             },
         )
         self.assertEqual(call.kwargs["json"]["input"]["max_tokens"], 300)
@@ -103,16 +73,18 @@ class TestJevLibLlm(unittest.TestCase):
     )
     @patch("main.httpx2.post")
     def test_explicit_options_override_environment(self, post: Mock):
+        instruction = "Produce test output."
+        generated_text = "Test output"
         response = Mock(spec=httpx2.Response)
         response.json.return_value = {
             "result": {
-                "choices": [{"message": {"content": "Generated text"}}],
+                "choices": [{"message": {"content": generated_text}}],
             },
         }
         post.return_value = response
 
         result = JevLib.llm(
-            "Generate without context.",
+            instruction,
             account_id="explicit-account",
             api_token="explicit-token",
             gateway_id="explicit-gateway",
@@ -122,7 +94,7 @@ class TestJevLibLlm(unittest.TestCase):
             timeout=5.0,
         )
 
-        self.assertEqual(result, "Generated text")
+        self.assertEqual(result, generated_text)
         call = post.call_args
         self.assertIn("explicit-account", call.args[0])
         self.assertEqual(
@@ -136,7 +108,7 @@ class TestJevLibLlm(unittest.TestCase):
         self.assertEqual(call.kwargs["json"]["model"], "explicit-model")
         self.assertEqual(
             json.loads(call.kwargs["json"]["input"]["messages"][1]["content"]),
-            {"instruction": "Generate without context."},
+            {"instruction": instruction},
         )
         self.assertEqual(call.kwargs["json"]["input"]["max_tokens"], 100)
         self.assertEqual(call.kwargs["json"]["input"]["temperature"], 0.2)
@@ -166,6 +138,43 @@ class TestJevLibLlm(unittest.TestCase):
             "Cloudflare rejected the model request",
         ):
             JevLib.llm("Hello")
+
+    @patch.dict(
+        os.environ,
+        {
+            "CF_ACCOUNT_ID": "test-account",
+            "CF_API_TOKEN": "test-token",
+        },
+        clear=True,
+    )
+    @patch("main.httpx2.post")
+    def test_rejects_invalid_json_response(self, post: Mock):
+        response = Mock(spec=httpx2.Response)
+        response.json.side_effect = ValueError("invalid test response")
+        post.return_value = response
+
+        with self.assertRaisesRegex(RuntimeError, "returned invalid JSON"):
+            JevLib.llm("Test instruction")
+
+    @patch.dict(
+        os.environ,
+        {
+            "CF_ACCOUNT_ID": "test-account",
+            "CF_API_TOKEN": "test-token",
+        },
+        clear=True,
+    )
+    @patch("main.httpx2.post")
+    def test_rejects_empty_generated_text(self, post: Mock):
+        response = Mock(spec=httpx2.Response)
+        response.json.return_value = {
+            "success": True,
+            "result": {"response": "   "},
+        }
+        post.return_value = response
+
+        with self.assertRaisesRegex(RuntimeError, "returned no text"):
+            JevLib.llm("Test instruction")
 
     @patch.dict(
         os.environ,

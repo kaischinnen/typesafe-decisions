@@ -22,31 +22,32 @@ def make_jevlib() -> JevLib:
 class TestJevLibMatch(unittest.TestCase):
     def test_returns_selected_label(self):
         jevlib = make_jevlib()
+        selected_label = "option-b"
         jevlib.client.system_one.return_value = SimpleNamespace(
-            choices={"match": SimpleNamespace(choice="returns")},
+            choices={"match": SimpleNamespace(choice=selected_label)},
         )
 
         selected = jevlib.match(
-            "My shoes arrived in the wrong size.",
-            "Which team should handle this?",
+            {"input": "test value"},
+            "Select the matching option.",
             {
-                "returns": "Exchanges and wrong items",
-                "shipping": "Delivery status and delays",
+                "option-a": "First test criterion",
+                "option-b": "Second test criterion",
             },
         )
 
-        self.assertEqual(selected, "returns")
+        self.assertEqual(selected, selected_label)
 
     def test_builds_choice_and_forwards_system_one_options(self):
         jevlib = make_jevlib()
         jevlib.client.system_one.return_value = SimpleNamespace(
-            choices={"match": SimpleNamespace(choice="shipping")},
+            choices={"match": SimpleNamespace(choice="option-b")},
         )
-        state = {"ticket": {"message": "Where is my order?"}}
-        question = {"task": "Choose the responsible team"}
+        state = {"record": {"value": "fixture"}}
+        question = {"task": "Choose the matching option"}
         criteria = {
-            "returns": {"applies_to": ["exchanges", "wrong items"]},
-            "shipping": None,
+            "option-a": {"matches": ["first", "primary"]},
+            "option-b": None,
         }
         retry = RetryPolicy(max_retries=0)
         timeout = httpx2.Timeout(5.0)
@@ -64,7 +65,7 @@ class TestJevLibMatch(unittest.TestCase):
             extra_body=extra_body,
         )
 
-        self.assertEqual(selected, "shipping")
+        self.assertEqual(selected, "option-b")
         jevlib.client.system_one.assert_called_once_with(
             state,
             {
@@ -83,13 +84,13 @@ class TestJevLibMatch(unittest.TestCase):
 
     def test_returns_custom_response_model_unchanged(self):
         jevlib = make_jevlib()
-        response = MatchResponse(selected="returns")
+        response = MatchResponse(selected="option-a")
         jevlib.client.system_one.return_value = response
 
         result = jevlib.match(
-            "I need a different size.",
-            "Which team should handle this?",
-            {"returns": "Exchanges", "shipping": "Delivery questions"},
+            "test input",
+            "Choose an option.",
+            {"option-a": "First criterion", "option-b": "Second criterion"},
             response_model=MatchResponse,
         )
 
