@@ -6,28 +6,28 @@ import httpx2
 from pydantic import BaseModel
 from typesafe_sdk import Choice, RetryPolicy, TypeSafeClient
 
-from main import JevLib
+from typesafe_decisions import DecisionClient
 
 
 class MatchResponse(BaseModel):
     selected: str
 
 
-def make_jevlib() -> JevLib:
-    jevlib = JevLib.__new__(JevLib)
-    jevlib.client = Mock(spec=TypeSafeClient)
-    return jevlib
+def make_client() -> DecisionClient:
+    decisions = DecisionClient.__new__(DecisionClient)
+    decisions.client = Mock(spec=TypeSafeClient)
+    return decisions
 
 
-class TestJevLibMatch(unittest.TestCase):
+class TestDecisionClientMatch(unittest.TestCase):
     def test_returns_selected_label(self):
-        jevlib = make_jevlib()
+        decisions = make_client()
         selected_label = "option-b"
-        jevlib.client.system_one.return_value = SimpleNamespace(
+        decisions.client.system_one.return_value = SimpleNamespace(
             choices={"match": SimpleNamespace(choice=selected_label)},
         )
 
-        selected = jevlib.match(
+        selected = decisions.match(
             {"input": "test value"},
             "Select the matching option.",
             {
@@ -39,8 +39,8 @@ class TestJevLibMatch(unittest.TestCase):
         self.assertEqual(selected, selected_label)
 
     def test_builds_choice_and_forwards_system_one_options(self):
-        jevlib = make_jevlib()
-        jevlib.client.system_one.return_value = SimpleNamespace(
+        decisions = make_client()
+        decisions.client.system_one.return_value = SimpleNamespace(
             choices={"match": SimpleNamespace(choice="option-b")},
         )
         state = {"record": {"value": "fixture"}}
@@ -54,7 +54,7 @@ class TestJevLibMatch(unittest.TestCase):
         extra_headers = {"x-trace-id": "match-test"}
         extra_body = {"metadata": {"source": "unit-test"}}
 
-        selected = jevlib.match(
+        selected = decisions.match(
             state,
             question,
             criteria,
@@ -66,7 +66,7 @@ class TestJevLibMatch(unittest.TestCase):
         )
 
         self.assertEqual(selected, "option-b")
-        jevlib.client.system_one.assert_called_once_with(
+        decisions.client.system_one.assert_called_once_with(
             state,
             {
                 "match": Choice(
@@ -83,11 +83,11 @@ class TestJevLibMatch(unittest.TestCase):
         )
 
     def test_returns_custom_response_model_unchanged(self):
-        jevlib = make_jevlib()
+        decisions = make_client()
         response = MatchResponse(selected="option-a")
-        jevlib.client.system_one.return_value = response
+        decisions.client.system_one.return_value = response
 
-        result = jevlib.match(
+        result = decisions.match(
             "test input",
             "Choose an option.",
             {"option-a": "First criterion", "option-b": "Second criterion"},
@@ -96,7 +96,7 @@ class TestJevLibMatch(unittest.TestCase):
 
         self.assertIs(result, response)
         self.assertIs(
-            jevlib.client.system_one.call_args.kwargs["response_model"],
+            decisions.client.system_one.call_args.kwargs["response_model"],
             MatchResponse,
         )
 

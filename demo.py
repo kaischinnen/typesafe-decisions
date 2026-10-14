@@ -1,14 +1,12 @@
-import os
-
-from main import JevLib
+from typesafe_decisions import DecisionClient, llm
 
 
-def run_feel(jl: JevLib) -> None:
+def run_feel(decisions: DecisionClient) -> None:
     email_state = """
     Please resolve my email immediately!
     """
 
-    if jl.feels(email_state, "needs an urgent reply") > 0.7:
+    if decisions.feels(email_state, "needs an urgent reply") > 0.7:
         print("The email needs an urgent reply.")
     else:
         print("The email does not need an urgent reply.")
@@ -16,16 +14,13 @@ def run_feel(jl: JevLib) -> None:
 
 def run_feel_llm() -> None:
     email_state = "Please resolve my email immediately!"
-    reply = JevLib.llm(
-        "Draft a calm, helpful reply in one short sentence.",
-        using=email_state,
-        api_token=os.environ["CF_GATEWAY_API_KEY"],
-    )
+    instruction = "Draft a calm, helpful reply in one short sentence."
+    reply = llm(instruction, using=email_state)
     print(f"Email: {email_state}")
     print(f"Draft reply: {reply}")
 
 
-def run_match(jl: JevLib) -> str:
+def run_match(decisions: DecisionClient) -> str:
     state = "My shoes arrived in the wrong size. Can I swap them for a different size?"
     instructions = "Which team should handle this?"
 
@@ -35,7 +30,7 @@ def run_match(jl: JevLib) -> str:
         "Billing Team": "Charges, invoices, payment problems",
     }
 
-    team = jl.match(state, instructions, teams)
+    team = decisions.match(state, instructions, teams)
 
     print(state)
     print(f"Route to: {team}")
@@ -46,12 +41,12 @@ def main() -> None:
     try:
         run_feel_llm()
 
-        with JevLib(api_key="TYPESAFE_API_KEY") as jl:
-            run_feel(jl)
+        with DecisionClient(api_key_env="TYPESAFE_API_KEY") as decisions:
+            run_feel(decisions)
 
             print("----------------------------")
 
-            run_match(jl)
+            run_match(decisions)
     except RuntimeError as error:
         print(f"Error: {error}")
 

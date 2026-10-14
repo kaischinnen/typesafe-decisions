@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "typesafe-decisions"
+version = "0.1.0"
+description = "Small, typed building blocks for semantic decisions in Python."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE.md"]
+authors = [
+    { name = "Kai Schinnen", email="k.schinnen@proton.me" },
+]
+keywords = ["ai", "decisions", "semantic", "typesafe"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
+]
+dependencies = [
+    "httpx2>=2.13.0,<3",
+    "typesafe-sdk>=0.7.1,<0.8",
+]
+
+[project.urls]
+Repository = "https://github.com/kaischinnen/typesafe-decisions"
+Issues = "https://github.com/kaischinnen/typesafe-decisions/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["typesafe_decisions*"]
+
+[tool.setuptools.package-data]
+typesafe_decisions = ["py.typed"]

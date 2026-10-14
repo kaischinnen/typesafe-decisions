@@ -5,10 +5,10 @@ from unittest.mock import Mock, patch
 
 import httpx2
 
-from main import JevLib
+from typesafe_decisions import llm
 
 
-class TestJevLibLlm(unittest.TestCase):
+class TestLlm(unittest.TestCase):
     @patch.dict(
         os.environ,
         {
@@ -17,7 +17,7 @@ class TestJevLibLlm(unittest.TestCase):
         },
         clear=True,
     )
-    @patch("main.httpx2.post")
+    @patch("typesafe_decisions.cloudflare.httpx2.post")
     def test_sends_only_instruction_and_explicit_context(self, post: Mock):
         instruction = "Transform the supplied test data."
         context = {"value": "fixture", "enabled": True}
@@ -29,10 +29,7 @@ class TestJevLibLlm(unittest.TestCase):
         }
         post.return_value = response
 
-        result = JevLib.__new__(JevLib).llm(
-            instruction,
-            using=context,
-        )
+        result = llm(instruction, using=context)
 
         self.assertEqual(result, generated_text)
         response.raise_for_status.assert_called_once_with()
@@ -71,7 +68,7 @@ class TestJevLibLlm(unittest.TestCase):
         },
         clear=True,
     )
-    @patch("main.httpx2.post")
+    @patch("typesafe_decisions.cloudflare.httpx2.post")
     def test_explicit_options_override_environment(self, post: Mock):
         instruction = "Produce test output."
         generated_text = "Test output"
@@ -83,7 +80,7 @@ class TestJevLibLlm(unittest.TestCase):
         }
         post.return_value = response
 
-        result = JevLib.llm(
+        result = llm(
             instruction,
             account_id="explicit-account",
             api_token="explicit-token",
@@ -117,7 +114,7 @@ class TestJevLibLlm(unittest.TestCase):
     @patch.dict(os.environ, {}, clear=True)
     def test_requires_cloudflare_configuration_only_when_called(self):
         with self.assertRaisesRegex(RuntimeError, r"\$CF_ACCOUNT_ID"):
-            JevLib.llm("Hello")
+            llm("Hello")
 
     @patch.dict(
         os.environ,
@@ -127,7 +124,7 @@ class TestJevLibLlm(unittest.TestCase):
         },
         clear=True,
     )
-    @patch("main.httpx2.post")
+    @patch("typesafe_decisions.cloudflare.httpx2.post")
     def test_rejects_unsuccessful_cloudflare_envelope(self, post: Mock):
         response = Mock(spec=httpx2.Response)
         response.json.return_value = {"success": False, "errors": []}
@@ -137,7 +134,7 @@ class TestJevLibLlm(unittest.TestCase):
             RuntimeError,
             "Cloudflare rejected the model request",
         ):
-            JevLib.llm("Hello")
+            llm("Hello")
 
     @patch.dict(
         os.environ,
@@ -147,14 +144,14 @@ class TestJevLibLlm(unittest.TestCase):
         },
         clear=True,
     )
-    @patch("main.httpx2.post")
+    @patch("typesafe_decisions.cloudflare.httpx2.post")
     def test_rejects_invalid_json_response(self, post: Mock):
         response = Mock(spec=httpx2.Response)
         response.json.side_effect = ValueError("invalid test response")
         post.return_value = response
 
         with self.assertRaisesRegex(RuntimeError, "returned invalid JSON"):
-            JevLib.llm("Test instruction")
+            llm("Test instruction")
 
     @patch.dict(
         os.environ,
@@ -164,7 +161,7 @@ class TestJevLibLlm(unittest.TestCase):
         },
         clear=True,
     )
-    @patch("main.httpx2.post")
+    @patch("typesafe_decisions.cloudflare.httpx2.post")
     def test_rejects_empty_generated_text(self, post: Mock):
         response = Mock(spec=httpx2.Response)
         response.json.return_value = {
@@ -174,7 +171,7 @@ class TestJevLibLlm(unittest.TestCase):
         post.return_value = response
 
         with self.assertRaisesRegex(RuntimeError, "returned no text"):
-            JevLib.llm("Test instruction")
+            llm("Test instruction")
 
     @patch.dict(
         os.environ,
@@ -184,7 +181,7 @@ class TestJevLibLlm(unittest.TestCase):
         },
         clear=True,
     )
-    @patch("main.httpx2.post")
+    @patch("typesafe_decisions.cloudflare.httpx2.post")
     def test_explains_cloudflare_billing_failure(self, post: Mock):
         request = httpx2.Request("POST", "https://api.cloudflare.test/ai/run")
         post.return_value = httpx2.Response(402, request=request)
@@ -193,7 +190,7 @@ class TestJevLibLlm(unittest.TestCase):
             RuntimeError,
             r"Cloudflare model request failed \(402\).*configure billing",
         ):
-            JevLib.llm("Hello")
+            llm("Hello")
 
     @patch.dict(
         os.environ,
@@ -203,14 +200,14 @@ class TestJevLibLlm(unittest.TestCase):
         },
         clear=True,
     )
-    @patch("main.httpx2.post")
+    @patch("typesafe_decisions.cloudflare.httpx2.post")
     def test_rejects_missing_generated_text(self, post: Mock):
         response = Mock(spec=httpx2.Response)
         response.json.return_value = {"success": True, "result": {}}
         post.return_value = response
 
         with self.assertRaisesRegex(RuntimeError, "Text model returned no text"):
-            JevLib.llm("Hello")
+            llm("Hello")
 
     @patch.dict(
         os.environ,
@@ -220,7 +217,7 @@ class TestJevLibLlm(unittest.TestCase):
         },
         clear=True,
     )
-    @patch("main.httpx2.post")
+    @patch("typesafe_decisions.cloudflare.httpx2.post")
     def test_rejects_oversized_generated_text(self, post: Mock):
         response = Mock(spec=httpx2.Response)
         response.json.return_value = {
@@ -230,7 +227,7 @@ class TestJevLibLlm(unittest.TestCase):
         post.return_value = response
 
         with self.assertRaisesRegex(RuntimeError, "oversized text"):
-            JevLib.llm("Hello", max_tokens=20_000)
+            llm("Hello", max_tokens=20_000)
 
 
 if __name__ == "__main__":
