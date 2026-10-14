@@ -43,7 +43,8 @@ print(team)
 ```
 
 See the [documentation](https://kaischinnen.github.io/typesafe-decisions/)
-for setup, concepts, guides, and the API reference.
+for setup, [application examples](https://kaischinnen.github.io/typesafe-decisions/examples/),
+concepts, guides, and the API reference.
 
 ## Development
 
@@ -58,5 +59,5 @@ python -m unittest
 zensical build --clean
 ```
 
-The source lives in `src/typesafe_decisions`, the executable example remains
-in `demo.py`, and tests live in `tests`.
+The source lives in `src/typesafe_decisions`, documentation examples live in
+`docs`, and tests live in `tests`.

@@ -38,6 +38,8 @@ request controls remain available without expanding the common call path.
 ## Next steps
 
 - Follow [Getting started](getting-started.md) for a first routing decision.
+- Adapt the complete [application examples](examples.md) for support routing,
+  escalation, and response drafting.
 - Read [Concepts](concepts.md) to understand the boundary between decisions and
   text generation.
 - Use the task-focused [guides](guides/match.md) for concrete patterns.

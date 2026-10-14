@@ -12,6 +12,7 @@ edit_uri = "edit/main/docs/"
 nav = [
     { Home = "index.md" },
     { "Getting started" = "getting-started.md" },
+    { "Application examples" = "examples.md" },
     { Concepts = "concepts.md" },
     { Guides = [
         { "Measure a property" = "guides/feels.md" },
